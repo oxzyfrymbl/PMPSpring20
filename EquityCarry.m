@@ -27,6 +27,14 @@ nAssets        = size(AssetList, 2);
 
 monthsToExpiry = zeros(nDays, nAssets);
 
+%Run loop to identify the time to expiry for each future
+%The loop will do the following:
+% 1) Grab front tickers and back tickers for each day and each index
+% 2) Get the month letter used in futures ticker
+% 3) Find the month number corresponding to the letter
+% 4) Take the difference between month index for front and back month fut
+% for each day
+% 5) Store the number for each day and contract in monthsToExpiry
 
 for i = 1:nDays
     BackTickRow = string(BackTickers(i, :)); %grab back tickers
@@ -67,6 +75,16 @@ end
 %% Interpolate futures prices to get 1-Month Futures Price for all Assets        
 OneMonthPrices = zeros(nDays, nAssets);
 
+%Loop to interpolate to get one-month futures prices
+%The loop will
+% 1) Grab Front Prices and Spot Prices for 1 index at a given day
+% 2) Do the following:
+%       -Set to value to NAN if we dont have a price
+%       -Interpolate between spot and 3-month if we have 3-month expiration
+%       -Interpolate between spot and 2-month if we have 2-month expiration
+%       -Do nothing if we have 1-month to expiration 
+% 3) Store interpolated one month futures prices
+
 for i = 1:nDays
     for j = 1:nAssets
         FrontPrice = FrontMonthPrices(i, j); %Grab front price
@@ -90,62 +108,6 @@ for i = 1:nDays
     end
 end
 
-
-
-
-%{
-for i = 1:nReits %number of reiterations
-   
-    rowInd = RollMat(i, 1); %Get row index for rollover
-    colInd = RollMat(i, 2); %Get col index for rollover
-    
-    CurrentMonth = MonthVector(rowInd);    %Grab month for given day
-    Tick         = BackTickers(rowInd, colInd); %Grab ticker to che
-    
-        if ismissing(Tick) == 1          %Check if ticker is missing
-            monthsToExpiry(rowInd, colInd) = NaN;
-        else
-            CharTick = char(Tick);       %Transform Ticker in to character array
-            MonthCodeTick = CharTick(3); %Grab Month Code from Ticker
-            MonthNumTick  = find(strcmp(MonthCodeTick, MonthCode)); %Compare with month code array and find number
-        end
-        
-        if MonthNumTick - CurrentMonth < 0
-                monthsToExpiry(rowInd, colInd) = MonthNumTick - CurrentMonth + 12; %Compare with current month to find nMonths to expiry
-        else
-                monthsToExpiry(rowInd, colInd) = MonthNumTick - CurrentMonth + 1;
-        end
-end
-
-
-%}
-
-%{
-for i = 1:nDays
-   
-    CurrentMonth = MonthVector(i); %Grab month for given day
-    CheckTickers = Tickers(i, :);  %Grab tickers for given day
-
-    
-    for j = 1:nAssets
-        Tick = string(CheckTickers(j));  %Grab ticker
-   
-        if ismissing(Tick) == 1          %Check if ticker is missing
-            monthsToExpiry(i, j) = NaN;
-        else
-            CharTick = char(Tick);       %Transform Ticker in to character array
-            MonthCodeTick = CharTick(3); %Grab Month Code from Ticker
-            MonthNumTick  = find(strcmp(MonthCodeTick, MonthCode)); %Compare with month code array and find number
-            if MonthNumTick - CurrentMonth < 0 
-                monthsToExpiry(i, j) = MonthNumTick - CurrentMonth + 12; %Compare with current month to find nMonths to expiry
-            else
-                monthsToExpiry(i, j) = MonthNumTick - CurrentMonth + 1;
-            end
-        end
-    end
-
-end
-%}                
 
 %% Compute Carry
 [firstDayList, lastDayList] = getFirstAndLastDayInPeriod(dates, 2); %Get first and last day
@@ -247,7 +209,6 @@ EqualTotalReturns = EqualXsReturns + RfMonthly;
 sharpeCarry = sqrt(12) * (mean(CarryTotalReturns) - mean(RfMonthly))./ std(CarryXsReturns);
 sharpeEqual = sqrt(12) * (mean(EqualTotalReturns) - mean(RfMonthly))./std(EqualXsReturns);
 
-
 %Compute Equity Lines
 EqualNAV = cumprod(1 + EqualXsReturns);
 CarryNAV  = cumprod(1 + CarryXsReturns);
@@ -267,10 +228,6 @@ dim = [.65 .2 .3 .0];
 annotation('textbox',dim,'String',str,'FitBoxToText','on');
 
 
-
-%  dates4fig = dates_time(firstDayList);
-%  plot(dates4fig, EqualNAV, 'r--')
-%  legend('Equal Weights', 'location', 'northwest')
 
 
 
