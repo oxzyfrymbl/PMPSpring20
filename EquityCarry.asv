@@ -157,7 +157,7 @@ C112                = C112(lookback:end, :);
 %% Analysing Carry as a predictor of returms
 %Scatterplots
 
-%{
+%
 n = 8;
 figure(1)
 for i = 1:8
@@ -272,15 +272,15 @@ plot(dates4fig, EqualNAV, 'k--', dates4fig, CarryNAV, 'b', dates4fig, C112NAV, '
 title('Global Equity Carry vs Equal Weights')
 ylabel('Cumulative Excess Returns');
 legend('Equal Weights', 'Carry', 'C112', 'location', 'northwest')
-str = strcat({'Sharpe C112: '}, string(sharpeC112));
-dim = [.65 .34 .3 .0];
-annotation('textbox',dim,'String',str,'FitBoxToText','on');
-str = strcat({'Sharpe Carry: '}, string(sharpeCarry));
-dim = [.65 .27 .3 .0];
-annotation('textbox',dim,'String',str,'FitBoxToText','on');
-str = strcat({'Sharpe Equal: '}, string(sharpeEqual));
-dim = [.65 .2 .3 .0];
-annotation('textbox',dim,'String',str,'FitBoxToText','on');
+% str = strcat({'Sharpe C112: '}, string(sharpeC112));
+% dim = [.65 .34 .3 .0];
+% annotation('textbox',dim,'String',str,'FitBoxToText','on');
+% str = strcat({'Sharpe Carry: '}, string(sharpeCarry));
+% dim = [.65 .27 .3 .0];
+% annotation('textbox',dim,'String',str,'FitBoxToText','on');
+% str = strcat({'Sharpe Equal: '}, string(sharpeEqual));
+% dim = [.65 .2 .3 .0];
+% annotation('textbox',dim,'String',str,'FitBoxToText','on');
 
 
 
