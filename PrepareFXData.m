@@ -1,4 +1,4 @@
-FXSpotRates = readtable('Data/FX_Spot_Rates_Equity.xlsx', 'TreatAsEmpty',{'#N/A N/A','NA','N/A'});
+FXSpotRates = readtable('Data/FX_Spot_Rates.xlsx', 'TreatAsEmpty',{'#N/A N/A','NA','N/A'});
 FXFwdRates = readtable('Data/FX_1M_FWD_Rates.xlsx', 'TreatAsEmpty',{'#N/A N/A','NA','N/A'});
 
 % FXSpotRates(:, 1) = datetime(FXSpotRates(:, 1));

@@ -3,13 +3,20 @@ clear
 close all
 
 % Parameters
-nLongs = 3;
-nShorts = 3;
+nLongs = 2;
+nShorts = 0;
 
 % Load FX data
 PrepareFXData;
 
-currencyCodes = ['CAD'; 'GBP'; 'EUR'; 'SEK'; 'CHF'; 'JPY'; 'HKD'; 'AUD'; 'BRL'; 'CLP'; 'CNY'; 'HUF'; 'MYR'; 'MXN'; 'NZD'; 'PLN'; 'ZAR'; 'KRW'; 'SGD'; 'TWD'; 'THB'; 'TRY'];
+% Define currencies
+currencyCodes = {'CAD', 'GBP', 'EUR', 'SEK', 'CHF', 'JPY', 'HKD', 'AUD', 'BRL', 'CLP', 'CNY', 'HUF', 'MYR', 'MXN', 'NZD', 'PLN', 'ZAR', 'KRW', 'SGD', 'TWD', 'THB', 'TRY'};
+
+% Exclude currencies
+excludedCurrencies = {'BRL'};
+usedCurrencies = ~ismember(currencyCodes, excludedCurrencies);
+FXFwdRates = FXFwdRates(:, usedCurrencies);
+FXSpotRates = FXSpotRates(:, usedCurrencies);
 
 nCountries = size(FXFwdRates, 2);
 nDays = size(FXFwdRates, 1);
@@ -32,7 +39,7 @@ for i = 1 : nMonths
     carryWeights(i, :) = computeSortWeights(carry(i, :), nLongs, nShorts, 1);
 end
 
-currencyCarryXsReturns = nansum(-carryWeights .* monthlyXsReturns, 2);
+currencyCarryXsReturns = nansum(carryWeights .* monthlyXsReturns, 2);
 currencyCarryNAV = cumprod(1 + currencyCarryXsReturns);
 
 % Plot
