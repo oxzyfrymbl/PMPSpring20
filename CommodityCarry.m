@@ -28,7 +28,6 @@ end
 %% Adjust for rollovers
 dailyXsReturns = rolloverFutures(FrontMonthPrices, BackMonthPrices, FrontTickers);
 
-
 %% Compound monthly futures returns
 [monthlyTotalReturns, monthlyXsReturns, RfMonthly] = aggregateFutXsReturns(dailyXsReturns, RfDaily, dates, 2);
 
@@ -94,7 +93,7 @@ C112NAV   = cumprod(1 + C112XsReturns);
 %Plot Results
 figure(5)
 semilogy(dates4fig, EqualNAV, 'k--', dates4fig, CarryNAV, 'b', dates4fig, C112NAV, 'r')
-title('Global Commodity Carry vs Equal Weights')
+title('Commodity Carry vs Equal Weights')
 ylabel('Cumulative Excess Returns');
 legend('Equal Weights', 'Carry', 'C112', 'location', 'northwest')
 str = strcat({'Sharpe C112: '}, string(sharpeC112));
