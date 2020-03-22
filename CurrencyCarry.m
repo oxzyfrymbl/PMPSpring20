@@ -13,10 +13,14 @@ PrepareFXData;
 currencyCodes = {'CAD', 'GBP', 'EUR', 'SEK', 'CHF', 'JPY', 'HKD', 'AUD', 'BRL', 'CLP', 'CNY', 'HUF', 'MYR', 'MXN', 'NZD', 'PLN', 'ZAR', 'KRW', 'SGD', 'TWD', 'THB', 'TRY'};
 
 % Exclude currencies
-excludedCurrencies = {'BRL'};
+excludedCurrencies = {'BRL'}; % Add currencies to exclude here
 usedCurrencies = ~ismember(currencyCodes, excludedCurrencies);
 FXFwdRates = FXFwdRates(:, usedCurrencies);
 FXSpotRates = FXSpotRates(:, usedCurrencies);
+
+% Switch to price notation (USD price of 1 unit foreign currency)
+FXFwdRates = 1 ./ FXFwdRates;
+FXSpotRates = 1 ./ FXSpotRates;
 
 nCountries = size(FXFwdRates, 2);
 nDays = size(FXFwdRates, 1);
@@ -30,7 +34,7 @@ carry = (monthlyFXSpotRates - monthlyFXFwdRates) ./ monthlyFXFwdRates;
 carry = carry(1 : end - 1, :); % we don't need the last one
 
 % Calculate returns
-monthlyXsReturns = monthlyFXFwdRates(1 : end - 1, :) ./ monthlyFXSpotRates(2 : end, :) - 1;
+monthlyXsReturns = monthlyFXSpotRates(2 : end, :) ./ monthlyFXFwdRates(1 : end - 1, :) - 1;
 
 % Weights
 carryWeights = zeros(nMonths, nCountries);
