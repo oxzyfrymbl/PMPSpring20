@@ -12,15 +12,14 @@ BackMonthPrices(:, 17)  = [];
 Tickers(:, 17)          = [];
 BackTickers(:, 17)      = [];
 
-%Delete brazil
-%{
+%Delete Brazil
 FrontMonthPrices(:, 14) = [];
 AssetList(14)           = [];
 SpotPrices(:, 14)       = [];
 BackMonthPrices(:, 14)  = [];
 Tickers(:, 14)          = [];
 BackTickers(:, 14)      = [];
-%}
+
 
 %% Get 1-Month Futures for all indices
 
@@ -71,10 +70,11 @@ for i = 1:nDays
             MonthCodeBack  = CharBack(look);
             
             MonthNumFront  = find(strcmp(MonthCodeFront, MonthCode)); %Compare with month code array and find number
-            MonthNumBack   = find(strcmp(MonthCodeBack, MonthCode)); %Compare with month code array and find number
+            MonthNumBack   = find(strcmp(MonthCodeBack, MonthCode));  %Compare with month code array and find number
             
+                %Compare front and backmonth to find nMonths to expiry
                 if MonthNumBack - MonthNumFront < 0 
-                    monthsToExpiry(i, j) = MonthNumBack - MonthNumFront + 12; %Compare with current month to find nMonths to expiry
+                    monthsToExpiry(i, j) = MonthNumBack - MonthNumFront + 12; 
                 else
                     monthsToExpiry(i, j) = MonthNumBack - MonthNumFront;
                 end
@@ -120,11 +120,13 @@ end
 
 
 %% Compute Carry
-[firstDayList, lastDayList] = getFirstAndLastDayInPeriod(dates, 2); %Get first and last day
+[firstDayList, lastDayList] = getFirstAndLastDayInPeriod(dates, 2);      %Get first and last day
 
-SpotMonthly  = SpotPrices(firstDayList, :);                %Get monthly spot prices
-FrontMonthly = OneMonthPrices(firstDayList, :);            %Get monthly futures prices
+SpotMonthly  = [SpotPrices(1, :); SpotPrices(lastDayList, :)];           %Get monthly spot prices
+FrontMonthly = [OneMonthPrices(1,:); OneMonthPrices(lastDayList, :)] ;   %Get monthly futures prices
+
 CarryMonthly = (SpotMonthly - FrontMonthly)./FrontMonthly; %Compute carry observed at start of month
+CarryMonthly = CarryMonthly(1:end-1,:); %Kill last signal
 
 %Compute C_1-12 Cary Factor (Moving 12-month average)
 nMonths  = length(firstDayList);
@@ -135,6 +137,9 @@ for i = 12:nMonths
     C112(i, :) = mean(CarryMonthly(i - lookback + 1: i, :));
 end
 
+%CarryDaily
+CarryDaily = (SpotPrices - OneMonthPrices) ./OneMonthPrices;
+%SpotReturnsDaily = SpotPrices(2:end, :) / SpotPrices(1:end-1,:) - 1;
 
 %% Adjust for rollovers
 dailyXsReturns = rolloverFutures(FrontMonthPrices, BackMonthPrices, Tickers);
@@ -156,7 +161,6 @@ C112                = C112(lookback:end, :);
 
 %% Analysing Carry as a predictor of returms
 %Scatterplots
-
 %{
 n = 8;
 figure(1)
@@ -188,7 +192,8 @@ for i = 25:31
 end
 %}
 
-
+%Regressions
+%{
 %Regressions
 regTable = zeros(6, nAssets);
 
@@ -219,10 +224,10 @@ end
     regTable.Properties.VariableNames = string(AssetList); %Set variable names to countryList
     regTable.Statistics = [{'Intercept','Int_t_stat', 'Estimate' , 'Est_t_stat', 'p_value', 'R_squared_adjusted'}]'; %Add column of statistics
     
-
+%}
 
 %% Strategy Weights
-%Compute weights
+%Compute Monthly Weights
 nMonthsTr        = length(RfMonthly);         %Get dimensions of trimmed data
 nAssets          = length(AssetList);         %Preallocate
 
@@ -230,27 +235,48 @@ CarryWeights     = getCarryWeights(CarryMonthly, 10, 6);  %get regular carry wei
 C112Weights      = getCarryWeights(C112, 10, 6);          %get C112 carry weights
 nAvailableAssets = sum(isfinite(CarryMonthly), 2);        %get available assets
 
+%Compute Daily Weights
+CarryWeightsDaily = getCarryWeights(CarryDaily, 10, 6);
+nAvailableDaily   = sum(isfinite(CarryDaily), 2);
+
 
 %% Strategy Returns
-%Compute Strategy Returns
+%Compute Monthly Strategy Returns
 EqualWeights   = isfinite(CarryMonthly) * 1./nAvailableAssets;
 EqualXsReturns = nansum(EqualWeights .* monthlyXsReturns, 2);
 CarryXsReturns = nansum(CarryWeights .* monthlyXsReturns, 2);
 C112XsReturns  = nansum(C112Weights .* monthlyXsReturns, 2);
 
-%Find Strategy Starting Point 
+%Compute Daily Strategy Returns
+EqualWeightsDaily = isfinite(CarryDaily) * 1./nAvailableDaily;
+EqualDailyXsReturns = nansum(EqualWeightsDaily .* dailyXsReturns, 2);
+CarryDailyXsReturns = nansum(CarryWeightsDaily .* dailyXsReturns, 2);
+
+
+%% Find Strategy Starting Point 
 %(Where number of assets is sufficiently large to build first portfolio)
+%Monthly Strategy
 NonZeroIndex  = find((C112XsReturns ~= 0));
 StrategyStart = NonZeroIndex(1);
 
+%Daily Strategy
+NonZeroIndex  = find((CarryDailyXsReturns ~= 0));
+DailyStart    = NonZeroIndex(1);
+
 %Align Data (Get rid of NaN values at beginning of Carry strategy)
+%Monthly Strategy
 CarryXsReturns = CarryXsReturns(StrategyStart:end, :);
 EqualXsReturns = EqualXsReturns(StrategyStart:end, :);
 C112XsReturns  = C112XsReturns(StrategyStart:end, :);
 RfMonthly      = RfMonthly(StrategyStart:end, :);
 dates4fig      = dates4fig(StrategyStart:end, :);
 
-%Compute total Returns
+%Daily Strategy
+CarryDailyXsReturns = CarryDailyXsReturns(DailyStart:end, :);
+EqualDailyXsReturns = EqualDailyXsReturns(DailyStart:end, :);
+dailyDates4fig      = dates_time(DailyStart:end, :);
+
+%% Compute total Returns
 CarryTotalReturns = CarryXsReturns + RfMonthly;
 C112TotalReturns  = C112XsReturns + RfMonthly;
 EqualTotalReturns = EqualXsReturns + RfMonthly;
@@ -261,14 +287,19 @@ sharpeCarry = sqrt(12) * (mean(CarryTotalReturns) - mean(RfMonthly))./ std(Carry
 sharpeEqual = sqrt(12) * (mean(EqualTotalReturns) - mean(RfMonthly))./std(EqualXsReturns);
 
 %Compute Equity Lines
+%Monthly Strategy
 EqualNAV  = cumprod(1 + EqualXsReturns);
 CarryNAV  = cumprod(1 + CarryXsReturns);
 C112NAV   = cumprod(1 + C112XsReturns);
 
+%Daily Strategy
+EqualDailyNAV = cumprod(1 + EqualDailyXsReturns);
+CarryDailyNAV = cumprod(1 + CarryDailyXsReturns);
 
 %Plot Results
+%Monthly
 figure(5)
-plot(dates4fig, EqualNAV, 'k--', dates4fig, CarryNAV, 'b', dates4fig, C112NAV, 'r')
+semilogy(dates4fig, EqualNAV, 'k--', dates4fig, CarryNAV, 'b', dates4fig, C112NAV, 'r')
 title('Global Equity Carry vs Equal Weights')
 ylabel('Cumulative Excess Returns');
 legend('Equal Weights', 'Carry', 'C112', 'location', 'northwest')
@@ -283,6 +314,9 @@ dim = [.65 .2 .3 .0];
 annotation('textbox',dim,'String',str,'FitBoxToText','on');
 
 
-
-
+figure(6)
+semilogy(dailyDates4fig, EqualDailyNAV, 'k--', dailyDates4fig, CarryDailyNAV, 'b')
+title('Global Equity Carry vs Equal Weights (Daily Rebalancing)')
+ylabel('Cumulative Excess Returns');
+legend('Equal Weights', 'Carry', 'location', 'northwest')
 

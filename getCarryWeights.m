@@ -13,14 +13,14 @@
 % are lower than this number, function returns NAN for this entry
 
 
-function Weights = getCarryWeights(CarryMonthly, maxAssets, minAssets)
+function Weights = getCarryWeights(CarryData, maxAssets, minAssets)
 
-nMonths = size(CarryMonthly, 1);
-nAssets = size(CarryMonthly, 2);
-CarryWeights = zeros(nMonths, nAssets);
+nPeriods = size(CarryData, 1);
+nAssets  = size(CarryData, 2);
+CarryWeights = zeros(nPeriods, nAssets);
 
-for i = 1:nMonths
-    Carry = CarryMonthly(i, :);             %Grab carry for one period
+for i = 1:nPeriods
+    Carry = CarryData(i, :);                    %Grab carry for one period
     nAvailable = sum(isfinite(Carry), 2);   %Check how many assets are available
     
     %Caps nLongs and nShorts at maxAssets / 2
