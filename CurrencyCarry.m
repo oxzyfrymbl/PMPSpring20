@@ -12,9 +12,17 @@ PrepareFXData;
 % Define currencies
 currencyCodes = {'CAD', 'GBP', 'EUR', 'SEK', 'CHF', 'JPY', 'HKD', 'AUD', 'BRL', 'CLP', 'CNY', 'HUF', 'MYR', 'MXN', 'NZD', 'PLN', 'ZAR', 'KRW', 'SGD', 'TWD', 'THB', 'TRY'};
 
-% Exclude currencies
+% Specify excluded/included currencies. Note that one of the both should
+% always be empty: Either specify currencies to exclude from the sample or currencies to
+% include from the sample, or leave both empty to include the whole sample
 excludedCurrencies = {}; % Add currencies to exclude here
-usedCurrencies = ~ismember(currencyCodes, excludedCurrencies);
+%includedCurrencies = {'EUR', 'HKD', 'AUD', 'HUF', 'MXN', 'ZAR', 'TWD', 'THB', 'TRY'}; % Add currencies to include here
+includedCurrencies = {};
+if ~isempty(includedCurrencies)
+    usedCurrencies = ismember(currencyCodes, excludedCurrencies);
+else
+    usedCurrencies = ~ismember(currencyCodes, includedCurrencies);
+end
 FXFwdRates = FXFwdRates(:, usedCurrencies);
 FXSpotRates = FXSpotRates(:, usedCurrencies);
 
